@@ -8,8 +8,21 @@ async function getFinalUrl(url) {
   return res.url;
 }
 
+// Function to trim URL to base domain (protocol + hostname + /)
+function trimToBaseDomain(url) {
+  try {
+    const urlObj = new URL(url);
+    // Reconstruct URL with just protocol + hostname + /
+    return `${urlObj.protocol}//${urlObj.hostname}/`;
+  } catch (error) {
+    // If URL parsing fails, return original
+    return url;
+  }
+}
+
 // Health check endpoint
 app.get('/', (req, res) => {
+  console.log(`[${new Date().toISOString()}] Health check requested`);
   res.json({ 
     status: 'ok', 
     message: 'Redirect resolver service',
@@ -20,8 +33,12 @@ app.get('/', (req, res) => {
 // Main redirect resolver endpoint
 app.get('/redirect', async (req, res) => {
   const url = req.query.url;
+  const timestamp = new Date().toISOString();
+  
+  console.log(`[${timestamp}] Redirect resolver called with URL: ${url}`);
   
   if (!url) {
+    console.log(`[${timestamp}] Error: Missing url parameter`);
     return res.status(400).json({ 
       error: 'Missing url parameter',
       usage: 'GET /redirect?url=<url>'
@@ -32,13 +49,22 @@ app.get('/redirect', async (req, res) => {
     // Validate URL format
     new URL(url);
     
-    const finalUrl = await getFinalUrl(url);
+    // Trim URL to base domain (remove query params, path, etc.)
+    const trimmedUrl = trimToBaseDomain(url);
+    console.log(`[${timestamp}] Trimmed URL: ${url} -> ${trimmedUrl}`);
+    
+    const finalUrl = await getFinalUrl(trimmedUrl);
+    console.log(`[${timestamp}] Final resolved URL: ${finalUrl}`);
+    
     res.json({ 
       originalUrl: url,
+      trimmedUrl: trimmedUrl,
       finalUrl: finalUrl,
-      redirected: url !== finalUrl
+      redirected: trimmedUrl !== finalUrl
     });
   } catch (error) {
+    console.error(`[${timestamp}] Error processing URL ${url}:`, error.message);
+    
     if (error instanceof TypeError && error.message.includes('Invalid URL')) {
       return res.status(400).json({ 
         error: 'Invalid URL format',
