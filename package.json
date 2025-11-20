@@ -1,0 +1,16 @@
+{
+  "name": "redirect-resolver",
+  "version": "1.0.0",
+  "description": "HTTP service to resolve redirect URLs",
+  "main": "redirect.js",
+  "scripts": {
+    "start": "node redirect.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
